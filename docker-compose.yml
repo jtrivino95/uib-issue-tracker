@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+    db:
+        image: postgres
+        environment:
+            - POSTGRES_DB=uibit
+            - POSTGRES_USER=uibit
+            - POSTGRES_PASSWORD=uibit
+        ports:
+          - 5432:5432
+
+        volumes:
+          - uibit_pgdata:/var/lib/postgresql/data
+
+volumes:
+    uibit_pgdata:
