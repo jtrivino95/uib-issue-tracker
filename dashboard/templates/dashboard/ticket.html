@@ -78,6 +78,7 @@
                                 <label for="assignee">Asignado a...</label>
                                 <select class="form-control" name="assignee">
                                     <option value="" selected="selected">No asignar</option>
+                                    <option value="" selected="selected">No asignar</option>
                                     {% for user in users %}
                                         <option value="{{ user.id }}" {% if ticket.user.id == user.id %} selected="selected" {% endif %}>{{ user.username }}</option>
                                     {% endfor %}

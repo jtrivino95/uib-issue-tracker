@@ -6,6 +6,7 @@ from django.template.loader import get_template
 import xhtml2pdf.pisa as pisa
 from django.shortcuts import redirect, render, HttpResponse
 from django_filters.views import FilterView
+from django_tables2 import  RequestConfig
 from django_tables2.views import SingleTableMixin
 from django.views import generic
 from django.contrib.auth.views import LoginView, LogoutView
@@ -28,6 +29,7 @@ class TicketListView(LoginRequiredMixin, FilterView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super(TicketListView, self).get_context_data(**kwargs)
         context['table'] = tables.TicketTable(context['filter'].qs)
+        RequestConfig(self.request).configure(context['table'])
         context['users'] = User.objects.all()
         return context
 
