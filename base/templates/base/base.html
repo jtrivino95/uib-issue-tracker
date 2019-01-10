@@ -1,4 +1,4 @@
-{% load static %}
+{% load static rest_framework hasgroup %}
 
 <!-- Doctype HTML5 -->
 <!doctype html>
@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="{% static 'base/css/font-awesome-animation.min.css' %}">
 
     <!-- Optional theme -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.2.1/slate/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.2.1/lumen/bootstrap.min.css">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'base/css/style.css' %}">
@@ -39,7 +39,7 @@
     <div class="page-header">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container-fluid">
-                <a class="navbar-brand" href="#">UIBit</a>
+                <a class="navbar-brand" href="{% url 'dashboard:index' %}">UIBit</a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -47,127 +47,134 @@
                 <div class="collapse navbar-collapse" id="navbarColor01">
                     <ul class="navbar-nav mr-auto">
                         <li class="nav-item active">
-                            <a class="nav-link" href="#">Sumario <span class="sr-only">(current)</span></a>
+                            <a class="nav-link" href="{% url 'dashboard:index' %}">Sumario <span class="sr-only">(current)</span></a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Nuevos</a>
+                            <a class="nav-link" href="{% url 'dashboard:index' %}?status=new">Nuevos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Asignados</a>
+                            <a class="nav-link" href="{% url 'dashboard:index' %}?status=assigned">Asignados</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">En proceso</a>
+                            <a class="nav-link" href="{% url 'dashboard:index' %}?status=in-progress">En proceso</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Finalizados</a>
+                            <a class="nav-link" href="{% url 'dashboard:index' %}?status=solved">Finalizados</a>
                         </li>
                         <li class="nav-item">
-                            <button type="button" data-toggle="modal" data-target="#nuevoTicket" class="btn btn-primary mx-2 my-1">Nuevo Ticket</button>
+                            <button type="button" data-toggle="modal" data-target="#nuevoTicket" class="btn btn-primary">Nuevo Ticket</button>
                         </li>
                     </ul>
                     <ul class="navbar-nav mr-left">
-                        <form class="form-inline">
-                            <input class="form-control m-1" type="text" placeholder="Ejemplo: INC-9311">
-                            <button class="btn btn-primary m-1" type="submit">Buscar</button>
+                        <form class="form-inline" method="GET" action="{% url 'dashboard:index' %}">
+                            <input class="form-control" type="text" name="codename" placeholder="Ejemplo: INC-9311" onkeydown="upperCaseF(this)">
+                            <button class="btn btn-primary" type="submit">Buscar</button>
                         </form>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                jtrivino (Administrador)
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                                <a class="dropdown-item" href="#">Administración</a>
-                                <a class="dropdown-item" href="#">Cerrar sesión</a>
-                            </div>
-                        </li>
+                        <div class="ml-3">
+                            {% if request.user.is_authenticated %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        {{ request.user.username }}
+                                        ({% if request.user.groups.all %}{{ request.user.groups.all | join:", " }}{% else %}Sin grupo{% endif %})
+                                    </a>
+                                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                        <a class="dropdown-item" href="{% url 'admin:index' %}">Administración</a>
+                                        <a class="dropdown-item" href="{% url 'dashboard:logout' %}">Cerrar sesión</a>
+                                    </div>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'dashboard:login' %}">Iniciar sesión</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'dashboard:register' %}">Registrarse</a>
+                                </li>
+                            {% endif %}
+                        </div>
                     </ul>
                 </div>
             </div>
         </nav>
 
         <!-- Modal -->
-        <div class="modal fade" id="nuevoTicket" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Nuevo Ticket</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <form>
-                        <div class="form-group">
-                        <label for="category">Categoría</label>
-                        <select class="form-control" id="category">
-                        <option>1</option>
-                        <option>2</option>
-                        <option>3</option>
-                        <option>4</option>
-                        <option>5</option>
-                        </select>
+        <form action="{% url 'ticket-list' %}" method="POST" id="createTicket">
+            {% csrf_token %}
+            <div class="modal fade" id="nuevoTicket" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Nuevo Ticket</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
                         </div>
-                        <div class="form-group">
-                        <label for="title">Título</label>
-                        <input type="email" class="form-control" id="title" placeholder="">
-                        </div>
-                        <div class="form-group">
-                        <label for="description">Descripción</label>
-                        <textarea class="form-control" id="description" rows="3"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="">Prioridad</label>
-                            <div>
-                                <div class="form-check form-check-inline">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1">
-                                    Crítica
-                                </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
-                                    Grave
-                                </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
-                                    Alta
-                                </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
-                                    Media
-                                </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2">
-                                    Baja
-                                </label>
+                        <div class="modal-body">
+                            <input type="hidden" name="reporter" value="{{ request.user.id }}">
+                            <input type="hidden" name="codename" value="placeholder">
+                            <div class="form-group">
+                                <label for="type">Categoría</label>
+                                <select class="form-control" id="type" name="type">
+                                    <option value="issue">Incidencia</option>
+                                    <option value="request">Petición</option>
+                                    <option value="system">Sistema</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="title">Título</label>
+                                <input type="text" class="form-control" id="title" name="title" placeholder="">
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Descripción</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            </div>
+                            {% if request.user|has_group:"Cliente" %}
+                            {% else %}
+                            <div class="form-group">
+                                <label for="">Prioridad</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio1" value="low">
+                                        Baja
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio2" value="middle">
+                                        Media
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio3" value="high">
+                                        Alta
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio4" value="severe">
+                                        Grave
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio5" value="critical">
+                                        Crítica
+                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                        <label for="assignee">Asignado a...</label>
-                        <select class="form-control" id="assignee">
-                        <option>1</option>
-                        <option>2</option>
-                        <option>3</option>
-                        <option>4</option>
-                        <option>5</option>
-                        </select>
+                        {% endif %}
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <input type="submit" class="btn btn-primary" value="Crear Ticket"/>
                         </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary">Crear Ticket</button>
+
                     </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 
     {% block content %}{% endblock %}
@@ -181,10 +188,44 @@
 			  src="https://code.jquery.com/jquery-3.3.1.min.js"
 			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
 			  crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/7.33.1/sweetalert2.all.min.js"></script>
     <!-- Bootstrap Core JavaScript -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
 
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+        <script>
+            $(document).ready(function(e) {
+                $("#createTicket").submit(function(e) {
+                    e.preventDefault();
+                    var form = $(this);
+                    var url = form.attr('action');
+                    var method = form.attr('method');
+
+                    $.ajax({
+                           type: method,
+                           url: url,
+                           data: form.serialize(), // serializes the form's elements.
+                            success: function(data)
+                            {
+                                location.reload();
+                            },
+                            error: function(data)
+                            {
+                                Swal('Ha ocurrido un error. Todos los campos son necesarios.');
+                            }
+                    });
+                });
+            });
+        </script>
+
+        <script>
+            function upperCaseF(a){
+                setTimeout(function(){
+                    a.value = a.value.toUpperCase();
+                }, 1);
+            }
+        </script>
+    {% endblock %}
 
 </body>
 </html>

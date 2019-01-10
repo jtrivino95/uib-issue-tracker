@@ -1,0 +1,9 @@
+Editar campos de ticket
+Sistema de permisos
+Arreglar redireccion admin
+Exportar a...
+Registro de usuarios
+Escalabilidad de tickets (?)
+Popular base de datos
+Informe
+

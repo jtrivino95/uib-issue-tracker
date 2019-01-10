@@ -1,5 +1,5 @@
 {% extends "base/base.html" %}
-{% load static %}
+{% load static humanize django_tables2 bootstrap3 %}
 
 {% block extra_css %}
      <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
@@ -11,59 +11,68 @@
 
     <div class="row my-3">
         <div class="col-md-2">
-            <form>
-                <input class="form-control mb-2" type="text" placeholder="Título...">
-                <select class="form-control mb-2" style="display:inline-block;">
-                    <option selected disabled>Estado...</option>
-                    <option>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                </select>
-                <select class="form-control mb-2" style="display:inline-block;">
-                    <option selected disabled>Prioridad...</option>
-                    <option>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                </select>
-                <input class="form-control mb-2" type="text" placeholder="Creador...">
-                <input class="form-control mb-2" type="text" placeholder="Asignado...">
-                <button class="btn btn-primary" type="submit">Buscar</button>
-            </form>
+                <h3>Filtros</h3>
+                <hr>
+                {% if filter %}
+                    <form action="{% url 'dashboard:index' %}" method="GET" class="form">
+                        {% bootstrap_form filter.form %}
+                        {% bootstrap_button 'Filtrar' button_class='btn-primary' %}
+                    </form>
+                {% endif %}
         </div>
-
-        <div class="col-md-8 card-columns">
-            {% for i in "xxxxxxxxxxxxxx" %}
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fa fa-circle" style="color:green"></i>
-                            <a href="#">Reparar ordenadores</a>
-                        </h5>
-                        <h6 class="card-subtitle mb-2 text-muted">
-                            <span class="">INC-999</span>
-                            <span class="badge badge-primary">Hace 5 días</span>
-                            <span class="badge badge-primary">Nuevo</span>
-                        </h6>
-                        <p class="card-text">Ha habido una incidencia con el ordenador 34 de l...</p>
+        {% if request.COOKIES.view == 'grid' %}
+            <div class="col-md-8 card-columns">
+                {% for ticket in filter.qs %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {% if ticket.priority == 'low' %}
+                                    <i class="fa fa-circle" style="color:green"></i>
+                                {% elif ticket.priority == 'middle' %}
+                                    <i class="fa fa-circle" style="color:yellow"></i>
+                                {% elif ticket.priority == 'high' %}
+                                    <i class="fa fa-circle" style="color:orange"></i>
+                                {% elif ticket.priority == 'high' %}
+                                    <i class="fa fa-circle" style="color:red"></i>
+                                {% elif ticket.priority == 'critical' %}
+                                    <i class="fa fa-circle" style="color:#722F37"></i>
+                                {% endif %}
+                                <a href="/tickets/{{ ticket.id }}">{{ ticket.title }}</a>
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <span class="">{{ ticket.codename }}</span>
+                                <span class="badge badge-primary">{{ ticket.created_at|naturalday }}</span>
+                                <span class="badge badge-primary">{{ ticket.get_status_display }}</span>
+                                <span class="badge badge-primary">{{ ticket.get_type_display }}</span>
+                            </h6>
+                            <p class="card-text">{{ ticket.description|truncatewords:64 }}</p>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="col-md-8">
+                {% render_table table 'django_tables2/bootstrap.html' %}
+            </div>
+        {% endif %}
 
         <div class="col-md-2">
-            <p>Exportar a...</p>
-            <div class="row">
-                <div class="col-md-2"><a href=""><i class="fa fa-2x fa-file-csv"></i></a></div>
-                <div class="col-md-2"><a href=""><i class="fa fa-2x fa-file-excel"></i></a></div>
-                <div class="col-md-2"><a href=""><i class="fa fa-2x fa-file-pdf"></i></a></div>
-            </div>
+            <p align="right">
+                <a href="{% url 'dashboard:index' %}" onclick="saveView('grid')"><i class="fa fa-2x fa-th p-1"></i></a>
+                <a href="{% url 'dashboard:index' %}" onclick="saveView('table')"><i class="fa fa-2x fa-list p-1"></i></a>
+            </p>
         </div>
     </div>
 
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        function saveView(type) {
+            document.cookie = "view="+type
+        }
+    </script>
 {% endblock %}

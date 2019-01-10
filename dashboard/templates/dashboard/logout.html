@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+{% load bootstrap3 %}
+
+{% block content %}
+ 
+     <div class="container">
+         <p>Ha cerrado sesión correctamente.</p>
+         <p><a href="{% url 'dashboard:index' %}">Pinche aquí para volver a la página principal.</a></p>
+         <p><a href="{% url 'dashboard:login' %}">Pinche aquí para iniciar sesión nuevamente.</a></p>
+     </div>
+ 
+{% endblock %}

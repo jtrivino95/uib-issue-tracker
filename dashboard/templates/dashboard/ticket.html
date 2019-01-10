@@ -1,0 +1,298 @@
+{% extends "base/base.html" %}
+{% load static humanize hasgroup %}
+
+{% block extra_css %}
+     <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+        <!-- Modal -->
+        <form action="{% url 'ticket-detail' ticket.id %}" method="PATCH" id="editarTicket">
+            {% csrf_token %}
+            <div class="modal fade" id="editTicket" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Editar Ticket</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                             <div class="form-group">
+                                  <label for="status">Estado</label>
+                                  <select class="form-control" name="status">
+                                       <option value="new" {% if ticket.status == 'new' %} checked="checked" {% endif %}>Nuevo</option>
+                                       <option value="assigned" {% if ticket.status == 'assigned' %} checked="checked" {% endif %}>Asignado</option>
+                                       <option value="in-progress" {% if ticket.status == 'inprogress' %} checked="checked" {% endif %}>En proceso</option>
+                                       <option value="solved" {% if ticket.status == 'solved' %} checked="checked" {% endif %}>Finalizado</option>
+                                  </select>
+                             </div>
+                            <div class="form-group">
+                                <label for="title">Título</label>
+                                <input type="text" class="form-control" id="title" name="title" placeholder="" value="{{ ticket.title }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Descripción</label>
+                                <textarea class="form-control" id="description" name="description" rows="3">{{ ticket.description }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="">Prioridad</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio1" value="low" {% if ticket.priority == 'low' %} checked="checked" {% endif %}>
+                                        Baja
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio2" value="middle" {% if ticket.priority == 'middle' %} checked="checked" {% endif %}>
+                                        Media
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio3" value="high" {% if ticket.priority == 'high' %} checked="checked" {% endif %}>
+                                        Alta
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio4" value="severe" {% if ticket.priority == 'severe' %} checked="severe" {% endif %}>
+                                        Grave
+                                    </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="radio" name="priority" id="inlineRadio5" value="critical" {% if ticket.priority == 'critical' %} checked="critical" {% endif %}>
+                                        Crítica
+                                    </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="assignee">Asignado a...</label>
+                                <select class="form-control" name="assignee">
+                                    <option value="" selected="selected">No asignar</option>
+                                    {% for user in users %}
+                                        <option value="{{ user.id }}" {% if ticket.user.id == user.id %} selected="selected" {% endif %}>{{ user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="updatecomments">Comentarios del editado</label>
+                                <textarea class="form-control" name="" id="updatecomments"  rows="5"></textarea>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <input type="submit" class="btn btn-primary" value="Actualizar Ticket"/>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </form>
+
+     <div class="row">
+          <div class="col-md-12">
+               <h3>
+                    <div class="row">
+                         <div class="col-md-10">
+                              {{ ticket.title }}
+                              <a href="/tickets/{{ ticket.id }}/download/csv" title="Exportar a CSV"><i class="fa fa-file-csv"></i></a>
+                              <a href="/tickets/{{ ticket.id }}/download/excel" title="Exportar a Excel"><i class="fa fa-file-excel"></i></a>
+                              <a href="#" onclick="window.print();" title="Exportar a PDF"><i class="fa fa-file-pdf"></i></a>
+                         </div>
+                         <div class="col-md-2">
+                             {% if request.user|has_group:"Cliente" %}
+                             {% else %}
+                                {% if request.user|has_group:"Técnico" and ticket.assignee.id != request.user.id %}
+                                {% else %}
+                                    <button type="button" data-toggle="modal" data-target="#editTicket" class="btn btn-warning">Editar Ticket</button>
+                                {% endif %}
+                             {% endif %}
+                         </div>
+                    </div>
+               </h3>
+          </div>
+     </div>
+     <hr>
+     <div class="row">
+          <div class="col-md-4">
+               <p>Identifiación: <span class="badge badge-primary">{{ ticket.codename }}</span></p>
+               <p>Tipo: <span class="badge badge-primary">{{ ticket.get_type_display }}</span></p>
+               <p>Prioridad: <span class="badge badge-primary">{{ ticket.get_priority_display }}</span></p>
+          </div>
+          <div class="col-md-4">
+               <p>Estado: <span class="badge badge-primary">{{ ticket.get_status_display }}</span></p>
+               <p>Creado: <span class="badge badge-primary">{{ ticket.created_at|naturalday }}</span></p>
+               <p>Actualizado: <span class="badge badge-primary">{{ ticket.updated_at|naturalday }}</span></p>
+          </div>
+          <div class="col-md-4">
+               <p>Asignado a:
+                    <span>
+                         <span class="badge badge-primary">
+                              {% if ticket.assignee %}
+                                   {{ ticket.assignee.username }}
+                              {% else %}
+                                   Sin asignar
+                              {% endif %}
+                         </span>
+                    </span>
+               </p>
+               <p>Creador:
+                    <span>
+                         <span class="badge badge-primary">
+                              {{ ticket.reporter }}
+                         </span>
+                    </span>
+               </p>
+          </div>
+     </div>
+     <hr>
+     <div class="row">
+          <div class="col-md-12">
+               <h3>Descripción</h3>
+               <p>{{ ticket.description }}</p>
+          </div>
+     </div>
+     <hr>
+
+     <div class="row">
+          <div class="col-md-12">
+               <h3 class="mb-3">Comentarios</h3>
+               {% for comment in ticket.comments.all %}
+                    <div class="row">
+                         <div class="col-md-10">
+                              <p><b>{{ comment.author }}</b><span style="color:gray;"> {{ comment.created_at|naturalday }}</span></p>
+                              <p>{{ comment.comment }}</p>
+                         </div>
+                              <div class="col-md-2">
+                                   <form class="" action="{% url 'comment-detail' comment.id %}" id="deleteComment">
+                                        {% csrf_token %}
+                                        <button class="btn btn-danger" type="submit" ><i class="fa fa-trash"></i></button>
+                                   </form>
+                              </div>
+                    </div>
+                    <hr>
+               {% empty %}
+                    <p>No existen comentarios.</p>
+               {% endfor %}
+          </div>
+     </div>
+    {% if request.user|has_group:"Cliente" %}
+    {% else %}
+     <div class="row">
+          <div class="col-md-12">
+               <form class="form" action="{% url 'comment-list' %}" method="POST" id="newComment">
+                    <div class="form-group">
+                         {% csrf_token %}
+                         <textarea class="form-control" name="comment" id="comment" rows="3"></textarea>
+                         <input type="hidden" name="author" value="{{ request.user.id }}">
+                         <input type="hidden" name="ticket" value="{{ ticket.id }}">
+                         <input class="btn btn-primary" type="submit" value="Añadir comentario"/>
+                    </div>
+               </form>
+          </div>
+     </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+     {{ block.super }}
+     <script>
+          $(document).ready(function(e) {
+              $("#editarTicket").submit(function(e) {
+                  e.preventDefault();
+                  var form = $(this);
+                  var url = form.attr('action');
+                  var method = form.attr('method');
+                  var data = form.serialize();
+                  delete data.updatecomments;
+
+                  $.ajax({
+                      type: method,
+                      url: url,
+                      data: data, // serializes the form's elements.
+                      success: function(data) {
+                          newcomment = {};
+                          newcomment.csrf_token = "{{ csrf_token }}"
+                          newcomment.author = "{{ request.user.id }}"
+                          newcomment.ticket = {{ ticket.id }}
+                          newcomment.comment = "{{ request.user.username }} ha actualizado el ticket. " + $("#updatecomments").val();
+                          $.ajax({
+                            type: "POST",
+                            url: "http://{{ request.get_host }}" + "{% url 'comment-list' %}",
+                            data: newcomment,
+                            success: function(data) {
+                                location.reload();
+                            },
+                            error: function(data) {
+                               Swal('Ha ocurrido un error');
+                            }
+                          });
+                      },
+                      error: function(data) {
+                        Swal('Ha ocurrido un error.');
+                      }
+                  });
+              });
+          });
+     </script>
+     <script>
+          $(document).ready(function(e) {
+              $("#newComment").submit(function(e) {
+
+              var form = $(this);
+              var url = form.attr('action');
+
+              $.ajax({
+               type: "POST",
+               url: url,
+               data: form.serialize(), // serializes the form's elements.
+               success: function(data)
+               {
+                   location.reload();
+               },
+               error: function(data)
+               {
+                   Swal('Ha ocurrido un error');
+               }
+              });
+
+              e.preventDefault(); // avoid to execute the actual submit of the form.
+              });
+
+              $("#deleteComment").submit(function(e) {
+
+              var form = $(this);
+              var url = form.attr('action');
+
+              $.ajax({
+               type: "DELETE",
+               url: url,
+               data: form.serialize(), // serializes the form's elements.
+               success: function(data)
+               {
+                   location.reload();
+               },
+               error: function(data)
+               {
+                   Swal('Ha ocurrido un error');
+               }
+              });
+
+              e.preventDefault(); // avoid to execute the actual submit of the form.
+              });
+          });
+     </script>
+
+{% endblock %}

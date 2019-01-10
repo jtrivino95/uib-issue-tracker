@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% load bootstrap3 %}
+
+{% block content %}
+ 
+     <div class="container">
+ 
+         {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+ 
+        <h1>Crear cuenta</h1>
+
+        <form method="post" action="{% url 'dashboard:register' %}">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            <input class="btn btn-primary" type="submit" name="submit" value="Registrar" />
+        </form>
+     </div>
+ 
+{% endblock %}

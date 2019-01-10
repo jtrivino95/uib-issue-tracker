@@ -16,8 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 import dashboard.urls
+import api.urls
+
+
+admin.site.site_header = 'UIB Issue Tracker'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(dashboard.urls))
+    path('api/', include(api.urls)),
+    path('', include(dashboard.urls)),
 ]
