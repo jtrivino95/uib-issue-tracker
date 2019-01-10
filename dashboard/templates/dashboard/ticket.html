@@ -110,12 +110,8 @@
                               <a href="#" onclick="window.print();" title="Exportar a PDF"><i class="fa fa-file-pdf"></i></a>
                          </div>
                          <div class="col-md-2">
-                             {% if request.user|has_group:"Cliente" %}
-                             {% else %}
-                                {% if request.user|has_group:"Técnico" and ticket.assignee.id != request.user.id %}
-                                {% else %}
-                                    <button type="button" data-toggle="modal" data-target="#editTicket" class="btn btn-warning">Editar Ticket</button>
-                                {% endif %}
+                             {% if request.user|has_group:"Técnico" and ticket.assignee.id != request.user.id or request.user|has_group:"Administrador"  %}
+                                <button type="button" data-toggle="modal" data-target="#editTicket" class="btn btn-warning">Editar Ticket</button>
                              {% endif %}
                          </div>
                     </div>
@@ -174,7 +170,7 @@
                               <p>{{ comment.comment }}</p>
                          </div>
                               <div class="col-md-2">
-                                   <form class="" action="{% url 'comment-detail' comment.id %}" id="deleteComment">
+                                   <form class="deleteComment" action="{% url 'comment-detail' comment.id %}">
                                         {% csrf_token %}
                                         <button class="btn btn-danger" type="submit" ><i class="fa fa-trash"></i></button>
                                    </form>
@@ -186,8 +182,7 @@
                {% endfor %}
           </div>
      </div>
-    {% if request.user|has_group:"Cliente" %}
-    {% else %}
+    {% if request.user|has_group:"Técnico" and ticket.assignee.id != request.user.id or request.user|has_group:"Administrador"  %}
      <div class="row">
           <div class="col-md-12">
                <form class="form" action="{% url 'comment-list' %}" method="POST" id="newComment">
@@ -271,26 +266,25 @@
               e.preventDefault(); // avoid to execute the actual submit of the form.
               });
 
-              $("#deleteComment").submit(function(e) {
+              $(".deleteComment").submit(function(e) {
+                  e.preventDefault(); // avoid to execute the actual submit of the form.
 
-              var form = $(this);
-              var url = form.attr('action');
+                  var form = $(this);
+                  var url = form.attr('action');
 
-              $.ajax({
-               type: "DELETE",
-               url: url,
-               data: form.serialize(), // serializes the form's elements.
-               success: function(data)
-               {
-                   location.reload();
-               },
-               error: function(data)
-               {
-                   Swal('Ha ocurrido un error');
-               }
-              });
-
-              e.preventDefault(); // avoid to execute the actual submit of the form.
+                  $.ajax({
+                   type: "DELETE",
+                   url: url,
+                   data: form.serialize(), // serializes the form's elements.
+                   success: function(data)
+                   {
+                       location.reload();
+                   },
+                   error: function(data)
+                   {
+                       Swal('Ha ocurrido un error');
+                   }
+                  });
               });
           });
      </script>

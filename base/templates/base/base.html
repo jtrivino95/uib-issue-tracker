@@ -61,9 +61,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'dashboard:index' %}?status=solved">Finalizados</a>
                         </li>
+                        {% if user.groups.all|length > 0 %}
                         <li class="nav-item">
                             <button type="button" data-toggle="modal" data-target="#nuevoTicket" class="btn btn-primary">Nuevo Ticket</button>
                         </li>
+                        {% endif %}
                     </ul>
                     <ul class="navbar-nav mr-left">
                         <form class="form-inline" method="GET" action="{% url 'dashboard:index' %}">
@@ -127,8 +129,7 @@
                                 <label for="description">Descripción</label>
                                 <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                             </div>
-                            {% if request.user|has_group:"Cliente" %}
-                            {% else %}
+                            {% if request.user|has_group:"Administrador" %}
                             <div class="form-group">
                                 <label for="">Prioridad</label>
                                 <div>

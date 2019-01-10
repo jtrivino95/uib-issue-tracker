@@ -14,7 +14,7 @@ class TicketFilter(django_filters.FilterSet):
             tecnic_group = Group.objects.get(name='Técnico')
             customer_group = Group.objects.get(name='Cliente')
 
-            if customer_group in user.groups.all():
+            if len(user.groups.all()) == 0 or customer_group in user.groups.all():
                 return qs.filter(reporter_id=user.id)
             else:
                 return qs

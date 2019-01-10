@@ -15,6 +15,7 @@ django-filter = "*"
 django-tables2 = "*"
 django-bootstrap3 = "*"
 xlwt = "*"
+lorem = "*"
 
 [requires]
 python_version = "3.6"
